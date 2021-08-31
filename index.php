@@ -83,15 +83,26 @@
         			$excelSheet = $spreadSheet->getActiveSheet();
         			$spreadSheetAry = $excelSheet->toArray();
         			$sheetCount = count($spreadSheetAry);
-                
                     
                     if($sheetCount > 1){
                         
                         unset($spreadSheetAry[0]);
                         
                         if(filter_var($spreadSheetAry[1][0], FILTER_VALIDATE_URL)) {
-                            $sessionData = getdataFunc($spreadSheetAry);
+                            $sessionData11 = getdataFunc($spreadSheetAry);
+                                
+                                $sessionData = "";
+                                if($sessionData11[0] != "<div class='alert alert-success'>Record updated successfully <br></div>"){
+                                    $sessionData .= $sessionData11[0];
+                                }
+                                
+                                if($sessionData11[1] != "<div class='alert alert-danger'>Record fail to add <br></div>"){
+                                    $sessionData .= $sessionData11[1];
+                                }
+                            
+                            
                             $resultStatus = true;
+                            
                         }else{
                             $sessionData = "<div class='alert alert-danger'>Excel file is invalid, Please add data like below example file.</div>";
                         }
@@ -103,10 +114,18 @@
         			
         		}else{
         			$sessionData = "<div class='alert alert-danger'>Invalid File Type. Upload Excel File.</div>";
-        		}
+        		} 
         }else{
             $dataLinks = $_POST['websiteLink'];
             $sessionData = getdataFunc($dataLinks);
+            $sessionData = "";
+            if($sessionData11[0] != "<div class='alert alert-success'>Record updated successfully <br></div>"){
+                $sessionData .= $sessionData11[0];
+            }
+            
+            if($sessionData11[1] != "<div class='alert alert-danger'>Record fail to add <br></div>"){
+                $sessionData .= $sessionData11[1];
+            }
             $resultStatus = true;
         }
 
@@ -114,12 +133,16 @@
 
     
     function getdataFunc($linkArray){
+            
+            $successAlert = "<div class='alert alert-success'>Record updated successfully <br>";
+            $errorAlert = "<div class='alert alert-danger'>Record fail to add <br>";
+            
         	foreach($linkArray as $link){
-				
-						$link = $link[0];
+			
+						$currentlink = $link[0];
 
 						$websiteContent = array(
-							'link' => $link,
+							'link' => $currentlink,
 							'phone' => '',
 							'meta_description' => '',
 							'home_html' => '',
@@ -129,7 +152,7 @@
 						);
 
 						// $html = file_get_contents($link);
-						$html = get_web_page($link);
+						$html = get_web_page($currentlink);
 						
 						if(@$html && $html != ''){
 						    
@@ -234,18 +257,19 @@
         						
         						$checkRecorde = "SELECT id FROM webcontent WHERE link LIKE '%".$domain_name."%' OR link='".$currentLink."' LIMIT 1";
         						$checkRecorderesult = mysqli_query($GLOBALS['connection'], $checkRecorde);
+        						
         						if (mysqli_num_rows($checkRecorderesult) > 0) {
         						    
-        						    $row1 = mysqli_fetch_assoc($checkRecorderesult);
-        						    $linkId= $row1['id'];
-        						    
-        						     $sqlQuery = "UPDATE webcontent SET link='".$websiteContent['link']."',webHtml='".addslashes($websiteContent['home_html'])."',phone='".$websiteContent['phone']."',description='".$websiteContent['meta_description']."',meta_title='".$websiteContent['meta_title']."',og_description='".$websiteContent['og_description']."',og_title='".$websiteContent['og_title']."',socialLinks='".$socialLinks."' WHERE id=".$linkId;
-        						     
-                                    if (mysqli_query($GLOBALS['connection'], $sqlQuery)) {
-                                      return "<div class='alert alert-success'>Old record updated successfully</div>";
-                                    } else {
-                                      return "<div class='alert alert-danger'>Error: " . $sqlQuery . "<br>" . mysqli_error($GLOBALS['connection']).'</div>';
-                                    }
+            						    $row1 = mysqli_fetch_assoc($checkRecorderesult);
+            						    $linkId= $row1['id'];
+            						    
+            						    $sqlQuery = "UPDATE webcontent SET link='".$websiteContent['link']."',webHtml='".addslashes($websiteContent['home_html'])."',phone='".$websiteContent['phone']."',description='".$websiteContent['meta_description']."',meta_title='".$websiteContent['meta_title']."',og_description='".$websiteContent['og_description']."',og_title='".$websiteContent['og_title']."',socialLinks='".$socialLinks."' WHERE id=".$linkId;
+            						     
+                                        if (mysqli_query($GLOBALS['connection'], $sqlQuery)) {
+                                          $successAlert .= "<div class='alert alert-success'>Old </div>";
+                                        } else {
+                                          $errorAlert .= $currentLink."<br/>";
+                                        }
         						    
         						    
         						}else{
@@ -253,9 +277,9 @@
                 						$sql = "insert into webcontent (link, webHtml, phone, description, meta_title, og_description, og_title, socialLinks) VALUES ('".$websiteContent['link']."', '".addslashes($websiteContent['home_html'])."', '".$websiteContent['phone']."', '".$websiteContent['meta_description']."', '".$websiteContent['meta_title']."', '".$websiteContent['og_description']."', '".$websiteContent['og_title']."', '".$socialLinks."' )"; 
                 				
                 						if (mysqli_query($GLOBALS['connection'], $sql)) {
-                							return "<div class='alert alert-success'>New record created successfully</div>";
+                							$successAlert .=  $currentLink."<br/>";
                 						} else {
-                							return "<div class='alert alert-danger'>Error: " . $sql . "<br>" . mysqli_error($GLOBALS['connection']).'</div>';
+                							$errorAlert .= $currentLink."<br/>";
                 						}
                 						
         						}
@@ -264,6 +288,12 @@
 			        }
 						
 			}
+			
+			$successAlert .= "</div>";
+			$errorAlert .= "</div>";
+			
+			return [$successAlert, $errorAlert];
+
     }
     
     
