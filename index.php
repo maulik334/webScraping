@@ -1,6 +1,7 @@
 <?php
 // ini_set('display_errors',1);
 // error_reporting(E_ALL);
+ini_set('max_execution_time', '3000000');
 
 // // print_r(get_web_page("https://www.8commerce.com/"));
 // // exit;
@@ -139,10 +140,9 @@
             
         	foreach($linkArray as $link){
 			
-						$currentlink = $link[0];
-
+						// $currentlink = $link[0];
 						$websiteContent = array(
-							'link' => $currentlink,
+							'link' => $link[0],
 							'phone' => '',
 							'meta_description' => '',
 							'home_html' => '',
@@ -152,7 +152,7 @@
 						);
 
 						// $html = file_get_contents($link);
-						$html = get_web_page($currentlink);
+						$html = get_web_page($link[0]);
 						
 						if(@$html && $html != ''){
 						    
@@ -188,9 +188,9 @@
         						$fbLinks = $xpath->query('//a[contains(@href, "facebook.com")]|//a[contains(@href, "instagram.com")]|//a[contains(@href, "youtube.com")]|//a[contains(@href, "twitter.com")]|//a[contains(@href, "linkedin.com")]');
         						
         						foreach($fbLinks as $fblink) {
-        							$currentLink = rtrim($fblink->getAttribute("href"),"/"); 
-        							if(!in_array($currentLink, $socialLinks)){
-        								$socialLinks[] = $currentLink;	
+        							$currentLink1 = rtrim($fblink->getAttribute("href"),"/"); 
+        							if(!in_array($currentLink1, $socialLinks)){
+        								$socialLinks[] = $currentLink1;	
         							}
         						}
         
@@ -200,50 +200,51 @@
         						$body = array();
         						preg_match("/<body[^>]*>(.*?)<\/body>/is", $html, $body);
         
-        					
-        						$simpleHTML = preg_replace("/<script[^>]*>(.*?)<\/script>/is", " ", $body[0]);
-        						$simpleHTML = preg_replace("/<style[^>]*>(.*?)<\/style>/is", " ", $simpleHTML);
-        						$simpleHTML = preg_replace("/<link[^>]*>/is", " ", $simpleHTML);
-        						
-        						$simpleHTML = strip_tags($simpleHTML);
-        						// print_r($simpleHTML); exit;
-        						$matches = $phoneNumberList = array();
-        						preg_match_all('/(\+\d+)?\s*(\(\d+\))?([\s-]?\d+)+/',$simpleHTML,$matches);
-        						
-        						if(!empty(@$matches[0])){
-        							$phonelist = $matches[0];
-        							foreach($phonelist as $phoneNumber){
-        								$tmpPhone = str_replace(' ', '', $phoneNumber);
-        								if(validate_phone_number($tmpPhone)){
-        									//check is date or not
-        									$matches1 = array();
-        									preg_match_all('/\d{4}\-\d{2}\-\d{2}/',$phoneNumber,$matches1);
-        									if(COUNT($matches1[0]) == 0){
-        										if(substr($tmpPhone,0,1) != '-'){
-        											if(!in_array(trim($phoneNumber), $phoneNumberList)){
-        												$phoneNumberList[] = trim($phoneNumber);
-        											}
-        										}
-        									}
-        
-        								}
-        							};
-        						}
-        
-        						$telLink = $xpath->query('//a[contains(@href, "tel:")]');
-        						foreach($telLink as $telNumber) {
-        							if(!in_array(trim($telNumber->textContent),$phoneNumberList)){
-        								$phoneNumberList[] = trim($telNumber->textContent);
-        							}	
-        						}
-        
-        
-        						if(COUNT($phoneNumberList) > 0){
-        							$websiteContent['phone'] = json_encode($phoneNumberList);
-        						}
-        
+								if(COUNT($body) > 0){
+									$simpleHTML = preg_replace("/<script[^>]*>(.*?)<\/script>/is", " ", $body[0]);
+									$simpleHTML = preg_replace("/<style[^>]*>(.*?)<\/style>/is", " ", $simpleHTML);
+									$simpleHTML = preg_replace("/<link[^>]*>/is", " ", $simpleHTML);
+									
+									$simpleHTML = strip_tags($simpleHTML);
+									// print_r($simpleHTML); exit;
+									$matches = $phoneNumberList = array();
+									preg_match_all('/(\+\d+)?\s*(\(\d+\))?([\s-]?\d+)+/',$simpleHTML,$matches);
+									
+									if(!empty(@$matches[0])){
+										$phonelist = $matches[0];
+										foreach($phonelist as $phoneNumber){
+											$tmpPhone = str_replace(' ', '', $phoneNumber);
+											if(validate_phone_number($tmpPhone)){
+												//check is date or not
+												$matches1 = array();
+												preg_match_all('/\d{4}\-\d{2}\-\d{2}/',$phoneNumber,$matches1);
+												if(COUNT($matches1[0]) == 0){
+													if(substr($tmpPhone,0,1) != '-'){
+														if(!in_array(trim($phoneNumber), $phoneNumberList)){
+															$phoneNumberList[] = trim($phoneNumber);
+														}
+													}
+												}
+			
+											}
+										};
+									}
+			
+									$telLink = $xpath->query('//a[contains(@href, "tel:")]');
+									foreach($telLink as $telNumber) {
+										if(!in_array(trim($telNumber->textContent),$phoneNumberList)){
+											$phoneNumberList[] = trim($telNumber->textContent);
+										}	
+									}
+			
+			
+									if(COUNT($phoneNumberList) > 0){
+										$websiteContent['phone'] = json_encode($phoneNumberList);
+									}
+								}
+
                                     
-                                $currentLink = preg_replace( "#^[^:/.]*[:/]+#i", "", $websiteContent['link'] );
+                                $currentLinkk1 = preg_replace( "#^[^:/.]*[:/]+#i", "", $websiteContent['link'] );
         						
         						$user_query_uri = $websiteContent['link'];
                                 
@@ -255,37 +256,41 @@
                                 $domain_name = preg_replace('/^www\./', '', $urlParts['host']);
         						
         						
-        						$checkRecorde = "SELECT id FROM webcontent WHERE link LIKE '%".$domain_name."%' OR link='".$currentLink."' LIMIT 1";
+        						$checkRecorde = "SELECT id FROM webcontent WHERE link LIKE '%".$domain_name."%' OR link='".$currentLinkk1."' LIMIT 1";
         						$checkRecorderesult = mysqli_query($GLOBALS['connection'], $checkRecorde);
-        						
-        						if (mysqli_num_rows($checkRecorderesult) > 0) {
-        						    
-            						    $row1 = mysqli_fetch_assoc($checkRecorderesult);
-            						    $linkId= $row1['id'];
-            						    
-            						    $sqlQuery = "UPDATE webcontent SET link='".$websiteContent['link']."',webHtml='".addslashes($websiteContent['home_html'])."',phone='".$websiteContent['phone']."',description='".$websiteContent['meta_description']."',meta_title='".$websiteContent['meta_title']."',og_description='".$websiteContent['og_description']."',og_title='".$websiteContent['og_title']."',socialLinks='".$socialLinks."' WHERE id=".$linkId;
-            						     
-                                        if (mysqli_query($GLOBALS['connection'], $sqlQuery)) {
-                                          $successAlert .= "<div class='alert alert-success'>Old </div>";
-                                        } else {
-                                          $errorAlert .= $currentLink."<br/>";
-                                        }
-        						    
-        						    
-        						}else{
-        						
-                						$sql = "insert into webcontent (link, webHtml, phone, description, meta_title, og_description, og_title, socialLinks) VALUES ('".$websiteContent['link']."', '".addslashes($websiteContent['home_html'])."', '".$websiteContent['phone']."', '".$websiteContent['meta_description']."', '".$websiteContent['meta_title']."', '".$websiteContent['og_description']."', '".$websiteContent['og_title']."', '".$socialLinks."' )"; 
-                				
-                						if (mysqli_query($GLOBALS['connection'], $sql)) {
-                							$successAlert .=  $currentLink."<br/>";
-                						} else {
-                							$errorAlert .= $currentLink."<br/>";
-                						}
+        						if($checkRecorderesult){
+									if (mysqli_num_rows($checkRecorderesult) > 0) {
+										
+											$row1 = mysqli_fetch_assoc($checkRecorderesult);
+											$linkId= $row1['id'];
+											
+											$sqlQuery = "UPDATE webcontent SET link='".$websiteContent['link']."',webHtml='".addslashes($websiteContent['home_html'])."',phone='".$websiteContent['phone']."',description='".$websiteContent['meta_description']."',meta_title='".$websiteContent['meta_title']."',og_description='".$websiteContent['og_description']."',og_title='".$websiteContent['og_title']."',socialLinks='".$socialLinks."' WHERE id=".$linkId;
+											
+											if (mysqli_query($GLOBALS['connection'], $sqlQuery)) {
+											//   $successAlert .= "<div class='alert alert-success'>Old </div>";
+												$successAlert .=  $currentLinkk1." ---OLD <br/>";
+											} else {
+												$errorAlert .= $currentLinkk1."<br/>";
+											}
+										
+										
+									}else{
+									
+											$sql = "insert into webcontent (link, webHtml, phone, description, meta_title, og_description, og_title, socialLinks) VALUES ('".$websiteContent['link']."', '".addslashes($websiteContent['home_html'])."', '".$websiteContent['phone']."', '".$websiteContent['meta_description']."', '".$websiteContent['meta_title']."', '".$websiteContent['og_description']."', '".$websiteContent['og_title']."', '".$socialLinks."' )"; 
+									
+											if (mysqli_query($GLOBALS['connection'], $sql)) {
+												$successAlert .=  $currentLinkk1."<br/>";
+											} else {
+												$errorAlert .= $currentLinkk1."<br/>";
+											}
+											
+									}
+								}
                 						
-        						}
                 						
-                						
-			        }
+			        }else{
+						$errorAlert .= $link[0]."<br/>";
+					}
 						
 			}
 			
@@ -611,7 +616,7 @@ div#response.display-block {
 <?php if($resultStatus){ ?>
     
     <script>setTimeout(function(){
-        window.location.href = "http://thepicab.com/linkedin/dataView.php"; 
+        // window.location.href = "http://thepicab.com/linkedin/dataView.php"; 
     }, 1000); </script>
     
 <?php } ?>
